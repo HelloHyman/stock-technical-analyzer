@@ -1,6 +1,6 @@
 # PyInstaller build files
 build/
-dist/
+# dist/ - Including dist folder for easy downloads
 *.spec.bak
 *.pyc
 __pycache__/
