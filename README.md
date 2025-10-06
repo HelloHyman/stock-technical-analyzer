@@ -105,26 +105,47 @@ All dependencies are listed in `requirements.txt`:
 
 ## For End Users - Installation
 
-### 🎯 Option 1: Professional Installer (EASIEST - Recommended for Non-Technical Users)
+### 🚀 ONE-CLICK OPTIONS (Recommended for Non-Technical Users)
 
-**Just download and install like any Windows app!**
+#### **Option 1: Portable Package (EASIEST!)** 
 
-1. Download `StockAnalyzer_Setup_X.X.X.exe` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
-2. Double-click the installer
-3. Follow the setup wizard
-4. Launch from Start Menu
+**Just ONE click to set up everything!**
+
+1. Download `StockAnalyzer_Portable.zip` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
+2. Extract the ZIP file
+3. Double-click `StockAnalyzer_OneClick.bat`
+4. **Done!** App launches, Desktop icon created automatically!
 
 **Features:**
-- ✅ Automatic installation to Program Files
-- ✅ Start Menu shortcuts
-- ✅ Desktop icon (optional)
-- ✅ Built-in uninstaller
-- ✅ Includes user guides
+- ✅ No installation needed
+- ✅ Desktop shortcut auto-created
+- ✅ Start Menu shortcut auto-created
+- ✅ App launches immediately
+- ✅ Just 1 click to set everything up!
 - ✅ No Python needed!
 
-📖 **Detailed instructions**: See [INSTALL_FOR_USERS.md](INSTALL_FOR_USERS.md)
+#### **Option 2: Simple Installer (2-3 clicks!)**
 
-### Option 2: Portable .exe (For Advanced Users)
+**Traditional installation with minimal clicks!**
+
+1. Download `StockAnalyzer_Setup_Simple.exe` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
+2. Double-click the installer
+3. Click "Install Now"
+4. Click "Finish"
+5. **Done!** App launches automatically!
+
+**Features:**
+- ✅ Installs to Program Files
+- ✅ Desktop icon created automatically
+- ✅ Launches immediately after install
+- ✅ Built-in uninstaller
+- ✅ Only 2-3 clicks needed!
+
+📖 **Detailed guide**: See [ONE_CLICK_GUIDE.md](ONE_CLICK_GUIDE.md) | [INSTALL_FOR_USERS.md](INSTALL_FOR_USERS.md)
+
+---
+
+### 🔧 Option 3: Portable .exe (For Advanced Users)
 
 1. Download `StockAnalyzer.exe`
 2. Double-click to run
