@@ -10,11 +10,15 @@
 
 **Option A: From GitHub Releases** (Recommended)
 1. Go to: https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases
-2. Find the latest release
-3. Click on `StockAnalyzer_Setup_X.X.X.exe` to download
+2. Find the latest release (e.g., v1.0.0)
+3. Download one of these files:
+   - `StockAnalyzer_Setup_1.0.0_Simple.exe` (Easiest - recommended)
+   - `StockAnalyzer_Setup_1.0.0.exe` (Standard installer)
+   - `StockAnalyzer_Portable.zip` (No installation needed)
 
 **Option B: Direct Download**
 - Get the installer from the provided download link
+- File name will be like: `StockAnalyzer_Setup_1.0.0_Simple.exe`
 
 ### Step 2: Run the Installer
 

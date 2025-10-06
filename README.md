@@ -112,6 +112,7 @@ All dependencies are listed in `requirements.txt`:
 **Just ONE click to set up everything!**
 
 1. Download `StockAnalyzer_Portable.zip` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
+   - *Note: You need to build this first - see [Build Instructions](#for-developers---building-from-source) below*
 2. Extract the ZIP file
 3. Double-click `StockAnalyzer_OneClick.bat`
 4. **Done!** App launches, Desktop icon created automatically!
@@ -128,7 +129,8 @@ All dependencies are listed in `requirements.txt`:
 
 **Traditional installation with minimal clicks!**
 
-1. Download `StockAnalyzer_Setup_Simple.exe` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
+1. Download `StockAnalyzer_Setup_1.0.0_Simple.exe` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
+   - *Note: You need to build and upload this first - see [Build Instructions](#for-developers---building-from-source) below*
 2. Double-click the installer
 3. Click "Install Now"
 4. Click "Finish"
