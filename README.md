@@ -29,31 +29,46 @@ A professional desktop application for technical analysis of stocks and cryptocu
 - **Python 3.8 or higher**
 - **Windows 10/11** (for .exe building)
 - **Internet connection** (for downloading dependencies)
+- **Inno Setup** (optional, for installer creation) - [Download](https://jrsoftware.org/isdl.php)
 
 ### Quick Start
 
 1. **Clone or download this repository**
 
-2. **Run the build script**:
+2. **Build Options:**
+
+   **Option A: Build Portable .exe Only**
    ```batch
    build_exe.bat
+   ```
+   
+   **Option B: Build Professional Installer (Recommended)**
+   ```batch
+   build_installer.bat
    ```
    
    This will:
    - Create a virtual environment
    - Install all dependencies
    - Build the executable using PyInstaller
+   - Create a professional Windows installer (if Inno Setup installed)
 
-3. **Test the executable**:
+3. **Test the output**:
    ```batch
+   # Portable exe
    dist\StockAnalyzer.exe
+   
+   # Or installer
+   installer_output\StockAnalyzer_Setup_1.0.0.exe
    ```
 
-4. **(Optional) Sign the executable**:
+4. **(Optional) Sign the executable/installer**:
    ```batch
    sign_exe.bat
    ```
    See [SIGNING_GUIDE.md](SIGNING_GUIDE.md) for details on code signing.
+
+📖 **Installer creation guide**: See [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md)
 
 ### Manual Setup
 
@@ -88,9 +103,28 @@ All dependencies are listed in `requirements.txt`:
 
 ---
 
-## For End Users - Running the Application
+## For End Users - Installation
 
-### Option 1: Using the .exe (Recommended)
+### 🎯 Option 1: Professional Installer (EASIEST - Recommended for Non-Technical Users)
+
+**Just download and install like any Windows app!**
+
+1. Download `StockAnalyzer_Setup_X.X.X.exe` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
+2. Double-click the installer
+3. Follow the setup wizard
+4. Launch from Start Menu
+
+**Features:**
+- ✅ Automatic installation to Program Files
+- ✅ Start Menu shortcuts
+- ✅ Desktop icon (optional)
+- ✅ Built-in uninstaller
+- ✅ Includes user guides
+- ✅ No Python needed!
+
+📖 **Detailed instructions**: See [INSTALL_FOR_USERS.md](INSTALL_FOR_USERS.md)
+
+### Option 2: Portable .exe (For Advanced Users)
 
 1. Download `StockAnalyzer.exe`
 2. Double-click to run
@@ -100,7 +134,7 @@ All dependencies are listed in `requirements.txt`:
    
    *(Note: SmartScreen warnings will disappear once the developer establishes reputation)*
 
-### Option 2: Running from Python
+### Option 3: Running from Python (For Developers)
 
 1. **Install Python**: Download from https://www.python.org/ (3.8 or higher)
 

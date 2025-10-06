@@ -4,7 +4,22 @@ Get up and running in minutes!
 
 ## 🚀 For End Users (Just Want to Run the App)
 
-### Option 1: Using the .exe (Easiest)
+### Option 1: Professional Installer (EASIEST - Recommended)
+1. Download `StockAnalyzer_Setup_X.X.X.exe`
+2. Double-click and follow setup wizard
+3. Launch from Start Menu → Stock Analyzer
+
+**Benefits:**
+- ✅ Automatic installation
+- ✅ Start Menu shortcuts  
+- ✅ Built-in uninstaller
+- ✅ No Python needed!
+
+📖 **Full Guide**: [INSTALL_FOR_USERS.md](INSTALL_FOR_USERS.md)
+
+---
+
+### Option 2: Portable .exe (Advanced Users)
 1. Download `StockAnalyzer.exe`
 2. Double-click to run
 3. If Windows SmartScreen warning appears:
@@ -15,7 +30,7 @@ Get up and running in minutes!
 
 ---
 
-### Option 2: Running from Python
+### Option 3: Running from Python
 
 **Step 1: Install Python**
 - Download from https://www.python.org/ (version 3.8 or higher)
@@ -31,9 +46,9 @@ Get up and running in minutes!
 
 ---
 
-## 🛠️ For Developers (Building the .exe)
+## 🛠️ For Developers (Building the Distribution)
 
-### Build Executable
+### Option A: Build Portable .exe Only
 
 **Easy Way:**
 ```batch
@@ -41,6 +56,19 @@ Get up and running in minutes!
 2. Wait for build to complete (5-10 minutes)
 3. Find your .exe in: dist\StockAnalyzer.exe
 ```
+
+### Option B: Build Professional Installer (Recommended)
+
+**Requirements:** Install [Inno Setup](https://jrsoftware.org/isdl.php) first
+
+**Easy Way:**
+```batch
+1. Double-click: build_installer.bat
+2. Wait for build to complete (5-10 minutes)
+3. Find installer in: installer_output\StockAnalyzer_Setup_1.0.0.exe
+```
+
+📖 **Complete Guide**: [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md)
 
 **Manual Way:**
 ```batch
@@ -51,8 +79,11 @@ venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Build
+# Build exe
 pyinstaller stock_analyzer.spec
+
+# Build installer (if Inno Setup installed)
+"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 ```
 
 ---
