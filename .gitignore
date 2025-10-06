@@ -1,4 +1,9 @@
+# ===================================================================
+# Stock Analyzer - Git Ignore Configuration
+# ===================================================================
+
 # Python
+# -------
 __pycache__/
 *.py[cod]
 *$py.class
@@ -16,55 +21,173 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Virtual Environment
+# Virtual Environments
+# --------------------
 venv/
 ENV/
 env/
 .venv
+env.bak/
+venv.bak/
 
 # PyInstaller
+# -----------
 *.manifest
 *.spec.bak
 
-# IDE
+# Unit test / coverage
+# --------------------
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+# ----------------
+.ipynb_checkpoints
+
+# IPython
+# -------
+profile_default/
+ipython_config.py
+
+# IDEs
+# ----
+# VSCode
 .vscode/
+*.code-workspace
+
+# PyCharm
 .idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
 *.swp
 *.swo
 *~
+.*.sw?
 
-# OS
-.DS_Store
+# Emacs
+*~
+\#*\#
+.\#*
+
+# OS Files
+# --------
+# Windows
 Thumbs.db
-desktop.ini
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
 
-# Build outputs
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+
+# Build Outputs
+# -------------
 dist/
 build/
 installer_output/
 *.exe.bak
+*.dll
+*.exe
+*.out
+*.app
 
-# Logs
-*.log
-
-# Certificates (keep private!)
+# Certificates (KEEP PRIVATE!)
+# -----------------------------
 *.pfx
 *.p12
 *.cer
 *.crt
 *.key
+*.pem
+sign_config.txt
 
-# Temporary files
+# Logs and Databases
+# ------------------
+*.log
+*.sql
+*.sqlite
+*.db
+
+# Temporary Files
+# ---------------
 *.tmp
 *.temp
 *.bak
+*.cache
+*.swp
 
-# Distribution
+# Distribution Packages
+# ---------------------
 *.zip
 *.tar.gz
 *.rar
+*.7z
+*.dmg
+*.iso
+
+# Configuration Files (with sensitive data)
+# ------------------------------------------
+config.local.ini
+.env
+.env.local
+.env.*.local
+secrets.json
+
+# Documentation build
+# -------------------
+docs/_build/
+site/
+
+# User-specific files
+# -------------------
+test_output/
+scratch/
+notes.txt
+TODO.txt
 

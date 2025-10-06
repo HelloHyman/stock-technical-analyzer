@@ -66,9 +66,9 @@ A professional desktop application for technical analysis of stocks and cryptocu
    ```batch
    sign_exe.bat
    ```
-   See [SIGNING_GUIDE.md](SIGNING_GUIDE.md) for details on code signing.
+   See [SIGNING_GUIDE.md](docs/SIGNING_GUIDE.md) for details on code signing.
 
-📖 **Installer creation guide**: See [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md)
+📖 **Installer creation guide**: See [INSTALLER_GUIDE.md](docs/INSTALLER_GUIDE.md)
 
 ### Manual Setup
 
@@ -141,7 +141,7 @@ All dependencies are listed in `requirements.txt`:
 - ✅ Built-in uninstaller
 - ✅ Only 2-3 clicks needed!
 
-📖 **Detailed guide**: See [ONE_CLICK_GUIDE.md](ONE_CLICK_GUIDE.md) | [INSTALL_FOR_USERS.md](INSTALL_FOR_USERS.md)
+📖 **Detailed guide**: See [ONE_CLICK_GUIDE.md](docs/ONE_CLICK_GUIDE.md) | [INSTALL_FOR_USERS.md](docs/INSTALL_FOR_USERS.md)
 
 ---
 
@@ -246,21 +246,46 @@ All dependencies are listed in `requirements.txt`:
 
 ## Building and Distribution
 
-### Files Structure
+### Repository Structure
 
 ```
 Stock_Analyzer/
-├── manual_stock_analyzer.py    # Main application
-├── requirements.txt             # Python dependencies
-├── stock_analyzer.spec          # PyInstaller config
-├── build_exe.bat               # Build script
-├── sign_exe.bat                # Signing script
-├── check_dependencies.bat      # Dependency checker
-├── README.md                   # This file
-├── SIGNING_GUIDE.md            # Code signing guide
-├── USER_GUIDE.md               # User documentation
-└── dist/
-    └── StockAnalyzer.exe       # Built executable
+├── manual_stock_analyzer.py           # Main application
+├── requirements.txt                   # Python dependencies
+├── VERSION                            # Version number
+├── LICENSE                            # MIT License
+├── README.md                          # This file
+├── CHANGELOG.md                       # Version history
+├── CONTRIBUTING.md                    # Contribution guidelines
+│
+├── Build Scripts/
+│   ├── build_exe.bat                 # Build standalone .exe
+│   ├── build_installer.bat           # Build standard installer
+│   ├── build_simple_installer.bat    # Build simple installer
+│   └── build_all_packages.bat        # Build all packages
+│
+├── Setup & Tools/
+│   ├── install_dependencies.bat      # Install dependencies
+│   ├── check_dependencies.bat        # Verify dependencies
+│   ├── sign_exe.bat                  # Sign executable
+│   └── StockAnalyzer_OneClick.bat    # One-click launcher
+│
+├── Installer Configs/
+│   ├── installer.iss                 # Standard installer config
+│   ├── installer_simple.iss          # Simple installer config
+│   └── stock_analyzer.spec           # PyInstaller spec
+│
+├── docs/                              # Documentation folder
+│   ├── README.md                     # Documentation index
+│   ├── USER_GUIDE.md                 # User manual
+│   ├── QUICK_START.md                # Quick reference
+│   ├── INSTALL_FOR_USERS.md          # Installation guide
+│   ├── ONE_CLICK_GUIDE.md            # One-click options
+│   ├── INSTALLER_GUIDE.md            # Installer creation
+│   └── SIGNING_GUIDE.md              # Code signing guide
+│
+└── dist/                              # Build output (generated)
+    └── StockAnalyzer.exe             # Built executable
 ```
 
 ### Building Process
@@ -269,7 +294,7 @@ Stock_Analyzer/
 2. **Sign**: `sign_exe.bat` → Adds digital signature
 3. **Distribute**: Share `StockAnalyzer.exe` with users
 
-See [SIGNING_GUIDE.md](SIGNING_GUIDE.md) for details on obtaining and using code signing certificates.
+See [SIGNING_GUIDE.md](docs/SIGNING_GUIDE.md) for details on obtaining and using code signing certificates.
 
 ---
 
@@ -347,9 +372,17 @@ python check_dependencies.bat
 
 ---
 
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+- Reporting bugs
+- Suggesting features  
+- Submitting pull requests
+- Development setup and workflow
+
 ## License
 
-This project is provided as-is for educational and commercial use.
+This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
 
 ---
 
@@ -372,16 +405,34 @@ This project is provided as-is for educational and commercial use.
 
 ---
 
+## Documentation
+
+### 📚 Complete Documentation
+- **[Documentation Index](docs/README.md)** - All documentation in one place
+- **[User Guide](docs/USER_GUIDE.md)** - Complete user manual
+- **[Quick Start](docs/QUICK_START.md)** - Fast setup guide
+- **[Installation Guide](docs/INSTALL_FOR_USERS.md)** - For end users
+- **[Installer Guide](docs/INSTALLER_GUIDE.md)** - Build installers
+- **[Signing Guide](docs/SIGNING_GUIDE.md)** - Code signing
+- **[One-Click Guide](docs/ONE_CLICK_GUIDE.md)** - Easiest setup
+- **[Changelog](CHANGELOG.md)** - Version history
+- **[Contributing](CONTRIBUTING.md)** - How to contribute
+
 ## Changelog
 
-### Version 1.0.0
-- Initial release
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
+
+### Version 1.0.0 (2025-01-06)
+- Initial release with complete feature set
 - Stock and crypto technical analysis
-- Interactive charts with MA support
+- Interactive charts with moving averages
 - RSI and support/resistance indicators
 - Multiple timeframe support
 - Data caching for performance
 - Professional UI with modern design
+- One-click installation options
+- Comprehensive documentation
+- Multiple distribution packages
 
 ---
 
