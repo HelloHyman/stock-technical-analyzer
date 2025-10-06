@@ -1,18 +1,16 @@
-# Stock Analyzer Application Dependencies
-# Core data processing
+# Stock Analyzer - Dash Web Dashboard Dependencies
+
+# Core framework
+dash>=2.14.0
+dash-bootstrap-components>=1.5.0
+
+# Data and visualization
 pandas>=2.0.0
 numpy>=1.24.0
+plotly>=5.17.0
 
 # Financial data
 yfinance>=0.2.28
 
-# Charting and visualization
-matplotlib>=3.7.0
-mplfinance>=0.12.9
-
-# PyInstaller for building executable
-pyinstaller>=5.13.0
-
-# Optional: For better performance
-multitasking>=0.0.11
-
+# Web server
+gunicorn>=21.2.0
