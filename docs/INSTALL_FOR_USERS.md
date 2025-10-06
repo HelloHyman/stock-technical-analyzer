@@ -4,42 +4,44 @@
 
 ---
 
-## 🚀 Quick Install (3 Steps)
+## 🚀 SUPER SIMPLE - Just 3 Steps!
 
-### Step 1: Download the Installer
+### ⭐ EASIEST WAY: Portable Package (RECOMMENDED)
 
-**Option A: From GitHub Releases** (Recommended)
-1. Go to: https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases
-2. Find the latest release (e.g., v1.0.0)
-3. Download one of these files:
-   - `StockAnalyzer_Setup_1.0.0_Simple.exe` (Easiest - recommended)
-   - `StockAnalyzer_Setup_1.0.0.exe` (Standard installer)
-   - `StockAnalyzer_Portable.zip` (No installation needed)
+**Total time: 10 seconds!**
 
-**Option B: Direct Download**
-- Get the installer from the provided download link
-- File name will be like: `StockAnalyzer_Setup_1.0.0_Simple.exe`
+1. **Download** `StockAnalyzer_Portable.zip` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
 
-### Step 2: Run the Installer
+2. **Extract** the ZIP file (right-click → "Extract All")
 
-1. **Find** the downloaded file (usually in your Downloads folder)
-2. **Double-click** `StockAnalyzer_Setup_X.X.X.exe`
-3. If you see a security warning:
-   - Click **"More info"**
-   - Click **"Run anyway"**
-   
-   *(This is normal for new software - the app is safe to install)*
+3. **Double-click** `StockAnalyzer_OneClick.bat` - **THAT'S IT!**
 
-### Step 3: Follow the Setup Wizard
+**What happens automatically:**
+- ✅ Desktop shortcut created
+- ✅ Start Menu shortcut created
+- ✅ App launches immediately
+- ✅ Setup window closes automatically
 
-1. Click **"Next"** on the welcome screen
-2. Choose where to install (or keep default)
-3. Choose if you want a desktop shortcut
-4. Click **"Install"**
-5. Wait for installation (takes ~30 seconds)
-6. Click **"Finish"**
+**Next time:** Just click the Desktop icon!
 
-**Done!** 🎉
+**No installation, no Python, no technical knowledge needed!** 🎉
+
+---
+
+### Alternative: Traditional Installer
+
+**If you prefer a standard Windows installer:**
+
+1. **Download** `StockAnalyzer_Setup_1.0.0_Simple.exe` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
+
+2. **Double-click** the installer
+   - If you see a security warning: Click **"More info"** → **"Run anyway"**
+
+3. **Click** "Install Now"
+
+4. **Click** "Finish"
+
+**Done!** App launches automatically 🎉
 
 ---
 

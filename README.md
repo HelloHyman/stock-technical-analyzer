@@ -109,21 +109,27 @@ All dependencies are listed in `requirements.txt`:
 
 #### **Option 1: Portable Package (EASIEST!)** 
 
-**Just ONE click to set up everything!**
+**📥 Download → Extract → Click ONE File → Done!**
 
-1. Download `StockAnalyzer_Portable.zip` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
-   - *Note: You need to build this first - see [Build Instructions](#for-developers---building-from-source) below*
-2. Extract the ZIP file
-3. Double-click `StockAnalyzer_OneClick.bat`
-4. **Done!** App launches, Desktop icon created automatically!
+1. **Download** `StockAnalyzer_Portable.zip` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
+2. **Extract** the ZIP file to any folder
+3. **Double-click** `StockAnalyzer_OneClick.bat`
 
-**Features:**
-- ✅ No installation needed
-- ✅ Desktop shortcut auto-created
-- ✅ Start Menu shortcut auto-created
+**That's it!** Everything happens automatically:
+- ✅ Desktop shortcut created
+- ✅ Start Menu shortcut created  
 - ✅ App launches immediately
-- ✅ Just 1 click to set everything up!
-- ✅ No Python needed!
+- ✅ Window closes automatically
+
+**Next time:** Just use the Desktop icon!
+
+**Benefits:**
+- 🚀 ONE file does everything
+- 📦 No installation needed
+- 🔧 No Python needed
+- ⚡ Takes 3 seconds total
+
+> **For Developers:** Build the ZIP once with `build_all_packages.bat`, then upload to Releases. Users just download and click!
 
 #### **Option 2: Simple Installer (2-3 clicks!)**
 

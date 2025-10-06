@@ -56,7 +56,8 @@ copy /Y StockAnalyzer_OneClick.bat dist\ >nul
 
 echo Creating portable ZIP package...
 cd dist
-powershell -Command "Compress-Archive -Path StockAnalyzer.exe,StockAnalyzer_OneClick.bat -DestinationPath ..\StockAnalyzer_Portable.zip -Force"
+copy ..\FOR_USERS_README.txt . >nul
+powershell -Command "Compress-Archive -Path StockAnalyzer.exe,StockAnalyzer_OneClick.bat,FOR_USERS_README.txt -DestinationPath ..\StockAnalyzer_Portable.zip -Force"
 cd ..
 
 if exist "StockAnalyzer_Portable.zip" (

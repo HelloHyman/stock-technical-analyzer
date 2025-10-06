@@ -115,13 +115,15 @@ Professional stock and cryptocurrency technical analysis tool for Windows.
 **File:** `StockAnalyzer_Portable.zip`
 
 **How to use:**
-1. Extract the ZIP file
-2. Double-click `StockAnalyzer_OneClick.bat`
-3. App launches and Desktop icon created automatically!
+1. **Extract** the ZIP file
+2. **Double-click** `StockAnalyzer_OneClick.bat` (ONE FILE - that's it!)
+3. **Done!** Desktop icon created, Start Menu shortcut added, app launches automatically
 
+✅ **Just ONE click** after extracting  
 ✅ No installation needed  
 ✅ Creates shortcuts automatically  
-✅ Perfect for quick setup
+✅ Perfect for non-technical users  
+✅ Includes user README file in the ZIP
 
 ---
 
