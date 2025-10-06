@@ -329,3 +329,4 @@ dir installer_output\*.exe
 
 Then go to: https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases/new
 
+

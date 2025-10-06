@@ -12,6 +12,18 @@
 
 1. **Download** `StockAnalyzer_Portable.zip` from [Releases](https://github.com/HelloHyman/Automated-Stock-and-Crypto-Analyzer/releases)
 
+   **⚠️ Windows Security Warning?**
+   
+   Windows may flag the ZIP as "contains a virus" - **This is a FALSE POSITIVE!**
+   
+   The software is safe (open source, no viruses). This happens because it's unsigned.
+   
+   **To download safely:**
+   - If browser blocks: Click **"..."** → **"Keep anyway"**
+   - After download: Right-click ZIP → **"Properties"** → Check **"Unblock"** → **"OK"**
+   
+   See [WINDOWS_SECURITY_WARNING.md](../WINDOWS_SECURITY_WARNING.md) for detailed instructions.
+
 2. **Extract** the ZIP file (right-click → "Extract All")
 
 3. **Double-click** `StockAnalyzer_OneClick.bat` - **THAT'S IT!**

@@ -2,6 +2,40 @@
                     STOCK ANALYZER - QUICK START GUIDE
 ================================================================================
 
+** WINDOWS SECURITY WARNING? READ THIS FIRST! **
+
+If Windows says "This file contains a virus" - DON'T PANIC!
+This is a FALSE POSITIVE. Here's why this happens:
+
+- The software is NEW and UNSIGNED (no expensive certificate yet)
+- Windows doesn't recognize it yet
+- This happens to ALL new unsigned software
+
+THE APP IS SAFE:
+✓ Open source code (review it on GitHub)
+✓ No viruses, malware, or spyware
+✓ Just a stock analysis tool
+
+HOW TO UNBLOCK:
+
+When downloading:
+1. If browser blocks: Click "..." → "Keep anyway"
+
+After downloading:
+1. Right-click the ZIP file → "Properties"
+2. Check "Unblock" at the bottom → Click "OK"
+3. Now extract normally
+
+If Windows Defender blocks it:
+1. Open Windows Security
+2. Go to "Protection History"
+3. Find the blocked item
+4. Click "Allow on device"
+
+Once unblocked, everything works perfectly!
+
+================================================================================
+
 SUPER SIMPLE SETUP - JUST 3 STEPS!
 
 Step 1: EXTRACT THIS ZIP
