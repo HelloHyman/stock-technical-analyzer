@@ -1,0 +1,26 @@
+# Core GUI Framework
+flet>=0.21.0
+
+# Data Analysis
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Financial Data
+yfinance>=0.2.18
+
+# Charting Libraries
+plotly>=5.15.0
+matplotlib>=3.7.0
+mplfinance>=0.12.9
+
+# HTTP Requests and Caching
+requests>=2.31.0
+requests-cache>=1.1.0
+tenacity>=8.2.0
+
+# Packaging for executable
+pyinstaller>=5.13.0
+
+# Additional utilities
+python-dateutil>=2.8.0
+pytz>=2023.3
