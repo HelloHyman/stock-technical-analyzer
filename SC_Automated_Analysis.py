@@ -1228,7 +1228,6 @@ def evaluate_options(ticker_symbol: str, current_price: float, high_52: Optional
 
             calls = chain.calls
 
-            
 
             filtered = calls[(calls['strike'] >= current_price) & (calls['strike'] <= current_price + 10)]
 
@@ -1239,15 +1238,33 @@ def evaluate_options(ticker_symbol: str, current_price: float, high_52: Optional
                 # Extract options data with all available fields
                 options_data = []
                 for _, row in filtered.iterrows():
+                    # Handle NaN values and ensure proper data types
+                    bid_val = row.get('bid', 0)
+                    ask_val = row.get('ask', 0)
+                    last_price = row.get('lastPrice', 0)
+                    
+                    # Convert to float and handle NaN
+                    try:
+                        bid_val = float(bid_val) if not pd.isna(bid_val) and bid_val is not None else 0.0
+                        ask_val = float(ask_val) if not pd.isna(ask_val) and ask_val is not None else 0.0
+                        last_price = float(last_price) if not pd.isna(last_price) and last_price is not None else 0.0
+                    except (ValueError, TypeError):
+                        bid_val = ask_val = last_price = 0.0
+                    
+                    # If bid/ask are 0 but we have lastPrice, use lastPrice as estimate
+                    if bid_val == 0.0 and ask_val == 0.0 and last_price > 0:
+                        bid_val = last_price * 0.98  # Estimate bid as 2% below last price
+                        ask_val = last_price * 1.02  # Estimate ask as 2% above last price
+                    
                     option_dict = {
                         'contractSymbol': row.get('contractSymbol', ''),
-                        'strike': row.get('strike', 0),
-                        'lastPrice': row.get('lastPrice', 0),
-                        'bid': row.get('bid', 0),
-                        'ask': row.get('ask', 0),
-                        'impliedVolatility': row.get('impliedVolatility', 0),
-                        'volume': row.get('volume', 0),
-                        'openInterest': row.get('openInterest', 0)
+                        'strike': float(row.get('strike', 0)) if not pd.isna(row.get('strike', 0)) else 0.0,
+                        'lastPrice': last_price,
+                        'bid': bid_val,
+                        'ask': ask_val,
+                        'impliedVolatility': float(row.get('impliedVolatility', 0)) if not pd.isna(row.get('impliedVolatility', 0)) else 0.0,
+                        'volume': int(row.get('volume', 0)) if not pd.isna(row.get('volume', 0)) else 0,
+                        'openInterest': int(row.get('openInterest', 0)) if not pd.isna(row.get('openInterest', 0)) else 0
                     }
                     options_data.append(option_dict)
                 result["expirations"][expiration] = {
@@ -1463,6 +1480,93 @@ def get_base_price(df: pd.DataFrame) -> float:
         return np.nan
 
 
+def calculate_price_forecast(df_ind: pd.DataFrame) -> Dict[str, float]:
+    """
+    Calculate 1-year price forecast based on 50-day MA trend from past 2 years.
+    
+    Args:
+        df_ind: DataFrame with OHLCV data
+        
+    Returns:
+        Dictionary with forecast data including predicted price and confidence
+    """
+    try:
+        # Import scipy at the top to avoid issues
+        from scipy import stats
+        
+        if df_ind.empty or len(df_ind) < 50:  # Reduced minimum requirement to 50 days
+            print(f"Forecast: Insufficient data - only {len(df_ind)} days available")
+            return {"predicted_price": np.nan, "confidence": 0, "trend_slope": 0, "current_ma50": np.nan}
+        
+        # Create a copy to avoid modifying original DataFrame
+        df_copy = df_ind.copy()
+        
+        # Calculate 50-day moving average with more flexible parameters
+        df_copy['MA50'] = df_copy['Close'].rolling(window=50, min_periods=min(50, len(df_copy)//2)).mean()
+        
+        # Get the last 2 years of data (approximately 500 trading days)
+        # Use the last 500 days or all available data if less
+        lookback_days = min(500, len(df_copy))
+        recent_data = df_copy.tail(lookback_days).copy()
+        
+        # Remove NaN values from MA50
+        recent_data = recent_data.dropna(subset=['MA50'])
+        
+        if len(recent_data) < 20:  # Reduced minimum requirement
+            print(f"Forecast: Not enough MA50 data after filtering - {len(recent_data)} points")
+            return {"predicted_price": np.nan, "confidence": 0, "trend_slope": 0, "current_ma50": np.nan}
+        
+        # Create x values (days)
+        x = np.arange(len(recent_data))
+        y = recent_data['MA50'].values
+        
+        # Check for valid data
+        if len(x) != len(y) or len(x) < 2:
+            print(f"Forecast: Invalid data arrays - x: {len(x)}, y: {len(y)}")
+            return {"predicted_price": np.nan, "confidence": 0, "trend_slope": 0, "current_ma50": np.nan}
+        
+        # Perform linear regression
+        slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+        
+        # Current 50 MA value
+        current_ma50 = recent_data['MA50'].iloc[-1]
+        
+        # Calculate forecast for 1 year ahead (approximately 252 trading days)
+        trading_days_ahead = 252
+        predicted_ma50 = intercept + slope * (len(recent_data) + trading_days_ahead - 1)
+        
+        # Use the current price relative to MA50 to adjust the forecast
+        current_price = df_ind['Close'].iloc[-1]
+        price_to_ma_ratio = current_price / current_ma50 if current_ma50 > 0 else 1
+        
+        # Apply the ratio to the predicted MA50 to get predicted price
+        predicted_price = predicted_ma50 * price_to_ma_ratio
+        
+        # Calculate confidence based on R-squared and data quality
+        confidence = min(95, max(0, (r_value ** 2) * 100))  # Convert R² to percentage, cap at 95%
+        
+        # Adjust confidence based on data length
+        if len(recent_data) < 200:
+            confidence *= 0.8  # Reduce confidence for shorter data periods
+        
+        print(f"Forecast calculation successful: {len(recent_data)} data points, confidence: {confidence:.1f}%")
+        
+        return {
+            "predicted_price": round(predicted_price, 2),
+            "confidence": round(confidence, 1),
+            "trend_slope": round(slope, 4),
+            "current_ma50": round(current_ma50, 2),
+            "current_price": round(current_price, 2),
+            "price_change_pct": round(((predicted_price - current_price) / current_price) * 100, 1)
+        }
+        
+    except Exception as e:
+        print(f"Error calculating price forecast: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"predicted_price": np.nan, "confidence": 0, "trend_slope": 0, "current_ma50": np.nan}
+
+
 
 # -----------------------------------------------------------------------------
 
@@ -1542,6 +1646,12 @@ class StockAnalyzerApp:
 
         self.chart_image: Optional[str] = None
         self.executor = ThreadPoolExecutor(max_workers=2)
+        self.executor_shutdown = False  # Flag to prevent submitting tasks after shutdown
+        
+        # Chart caching for performance
+        self.chart_cache: Dict[str, str] = {}  # Cache chart images by symbol+timeframe+settings
+        self.chart_cache_timestamp: Dict[str, float] = {}
+        self.chart_cache_ttl = 60  # Cache for 60 seconds
 
         
 
@@ -2356,11 +2466,67 @@ class StockAnalyzerApp:
         
         # Current price and range info with explanation
         current_price = self.options_data.get('current_price', 0)
-
         strike_range = self.options_data.get('strike_range', 'N/A')
-
         
-        options_content.append(ft.Text(f"💰 Current Price: ${current_price:.2f}", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_700))
+        # Calculate price forecast if we have current data
+        forecast_data = None
+        if self.current_df is not None and not self.current_df.empty:
+            print(f"Calculating forecast with {len(self.current_df)} data points")
+            forecast_data = calculate_price_forecast(self.current_df)
+            if forecast_data and np.isnan(forecast_data['predicted_price']):
+                print("Forecast calculation returned NaN - showing loading state")
+                forecast_data = None  # This will trigger loading display
+        else:
+            print("No current_df available for forecast calculation - showing loading state")
+        
+        # Display current price and forecast
+        price_row = ft.Row([
+            ft.Column([
+                ft.Text(f"💰 Current Price", size=12, color=ft.Colors.GREY_600),
+                ft.Text(f"${current_price:.2f}", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_700)
+            ], spacing=2),
+            ft.Container(width=20),  # Spacer
+            ft.Column([
+                ft.Text(f"🔮 1-Year Forecast", size=12, color=ft.Colors.GREY_600),
+                ft.Row([
+                    ft.Text(
+                        f"${forecast_data['predicted_price']:.2f}" if forecast_data and not np.isnan(forecast_data['predicted_price']) else "Calculating...", 
+                        size=16, 
+                        weight=ft.FontWeight.BOLD, 
+                        color=ft.Colors.PURPLE_700 if forecast_data and not np.isnan(forecast_data['predicted_price']) else ft.Colors.ORANGE_600,
+                        expand=True
+                    ),
+                    ft.ProgressRing(
+                        width=16, height=16, stroke_width=2, 
+                        color=ft.Colors.ORANGE_600,
+                        visible=False if (forecast_data and not np.isnan(forecast_data['predicted_price'])) else True
+                    )
+                ], alignment=ft.MainAxisAlignment.START)
+            ], spacing=2)
+        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        
+        options_content.append(price_row)
+        
+        # Add forecast details - always show something, either data or loading
+        if forecast_data and not np.isnan(forecast_data['predicted_price']):
+            # Show actual forecast data
+            forecast_details = ft.Row([
+                ft.Text(f"Confidence: {forecast_data['confidence']:.1f}%", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_600, expand=True),
+                ft.Text(f"Change: {forecast_data['price_change_pct']:+.1f}%", size=14, weight=ft.FontWeight.BOLD, 
+                       color=ft.Colors.GREEN_600 if forecast_data['price_change_pct'] > 0 else ft.Colors.RED_600, expand=True),
+                ft.Text(f"Trend: {'📈 Bullish' if forecast_data['trend_slope'] > 0 else '📉 Bearish' if forecast_data['trend_slope'] < 0 else '➡️ Sideways'}", 
+                       size=14, weight=ft.FontWeight.BOLD, 
+                       color=ft.Colors.GREEN_600 if forecast_data['trend_slope'] > 0 else ft.Colors.RED_600 if forecast_data['trend_slope'] < 0 else ft.Colors.GREY_600, expand=True)
+            ], alignment=ft.MainAxisAlignment.SPACE_EVENLY)
+            options_content.append(forecast_details)
+        else:
+            # Show loading indicator instead of N/A
+            loading_indicator = ft.Row([
+                ft.Text("🔄 Calculating forecast...", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.ORANGE_600, expand=True),
+                ft.ProgressRing(width=20, height=20, stroke_width=2, color=ft.Colors.ORANGE_600)
+            ], alignment=ft.MainAxisAlignment.CENTER)
+            options_content.append(loading_indicator)
+        
         options_content.append(ft.Text(f"📊 Price Range: {strike_range}", size=14, color=ft.Colors.BLUE_700))
         options_content.append(ft.Text("(Range represents available strike prices)", size=12, color=ft.Colors.GREY_600, italic=True))
         options_content.append(ft.Divider(height=2))
@@ -2401,17 +2567,17 @@ class StockAnalyzerApp:
 
                     # Create expiration container content
                     exp_content = []
-                    exp_content.append(ft.Text(f"📅 {expiration_date}", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_700))
+                    exp_content.append(ft.Text(f"📅 {expiration_date}", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_700))
                     
-                    # Add table headers (evenly distributed)
+                    # Add table headers (fixed width for better alignment)
                     header_row = ft.Row([
-                        ft.Text("Strike", size=12, weight=ft.FontWeight.BOLD, expand=True),
-                        ft.Text("Bid", size=12, weight=ft.FontWeight.BOLD, expand=True),
-                        ft.Text("Ask", size=12, weight=ft.FontWeight.BOLD, expand=True),
-                        ft.Text("IV", size=12, weight=ft.FontWeight.BOLD, expand=True),
-                        ft.Text("OI", size=12, weight=ft.FontWeight.BOLD, expand=True),
-                        ft.Text("Vol", size=12, weight=ft.FontWeight.BOLD, expand=True)
-                    ], spacing=5)
+                        ft.Text("Strike", size=10, weight=ft.FontWeight.BOLD, width=45),
+                        ft.Text("Bid", size=10, weight=ft.FontWeight.BOLD, width=45),
+                        ft.Text("Ask", size=10, weight=ft.FontWeight.BOLD, width=45),
+                        ft.Text("IV", size=10, weight=ft.FontWeight.BOLD, width=45),
+                        ft.Text("OI", size=10, weight=ft.FontWeight.BOLD, width=45),
+                        ft.Text("Vol", size=10, weight=ft.FontWeight.BOLD, width=45)
+                    ], spacing=1, tight=True)
                     exp_content.append(header_row)
                     
                     # Add divider line
@@ -2429,29 +2595,29 @@ class StockAnalyzerApp:
                         strike_color = ft.Colors.GREEN_700 if strike <= current_price else ft.Colors.BLUE_700
                         
                         option_row = ft.Row([
-                            ft.Text(f"${strike:.0f}", size=11, weight=ft.FontWeight.BOLD, color=strike_color, expand=True),
-                            ft.Text(f"${bid:.2f}", size=11, color=ft.Colors.GREY_700, expand=True),
-                            ft.Text(f"${ask:.2f}", size=11, color=ft.Colors.GREY_700, expand=True),
-                            ft.Text(f"{iv:.1%}" if iv and iv > 0 else "N/A", size=11, color=ft.Colors.ORANGE_700, expand=True),
-                            ft.Text(f"{open_interest:,}" if open_interest > 0 else "0", size=11, color=ft.Colors.BLUE_700, expand=True),
-                            ft.Text(f"{volume:,}" if volume > 0 else "0", size=11, color=ft.Colors.GREEN_700, expand=True)
-                        ], spacing=5)
+                            ft.Text(f"${strike:.0f}", size=10, weight=ft.FontWeight.BOLD, color=strike_color, width=45),
+                            ft.Text(f"${bid:.2f}", size=10, color=ft.Colors.GREY_700, width=45),
+                            ft.Text(f"${ask:.2f}", size=10, color=ft.Colors.GREY_700, width=45),
+                            ft.Text(f"{iv:.1%}" if iv and iv > 0 else "N/A", size=10, color=ft.Colors.ORANGE_700, width=45),
+                            ft.Text(f"{open_interest:,}" if open_interest > 0 else "0", size=10, color=ft.Colors.BLUE_700, width=45),
+                            ft.Text(f"{volume:,}" if volume > 0 else "0", size=10, color=ft.Colors.GREEN_700, width=45)
+                        ], spacing=1, tight=True)
                         exp_content.append(option_row)
                     
-                    # Create scrollable expiration container (shorter to fit options chain)
+                    # Create scrollable expiration container (fits within options card)
                     expiration_container = ft.Container(
                         content=ft.Column(
                             exp_content, 
-                            spacing=4,
+                            spacing=2,  # Reduced spacing for more compact layout
                             scroll=ft.ScrollMode.AUTO  # Make it scrollable
                         ),
-                        padding=6,
+                        padding=4,  # Reduced padding
                         bgcolor=ft.Colors.GREY_50,
                         border_radius=8,
                         border=ft.border.all(1, ft.Colors.GREY_300),
-                        width=None,  # Adaptive width
-                        height=200,  # Shorter height to fit options chain
-                        expand=True  # Fill available space
+                        width=280,  # Fixed width to fit in 320px container with padding
+                        height=120,  # Much shorter height to fit in options chain container
+                        clip_behavior=ft.ClipBehavior.ANTI_ALIAS  # Prevent overflow
                     )
                     expiration_containers.append(expiration_container)
                     
@@ -2460,13 +2626,13 @@ class StockAnalyzerApp:
                     if len(expiration_containers) >= 2:  # Limit to 2 expirations side by side
                         break
         
-        # Add expirations side by side with adaptive sizing
+        # Add expirations side by side with proper sizing
         if expiration_containers:
             expirations_row = ft.Row(
                 expiration_containers, 
-                spacing=10,
-                expand=True,  # Allow containers to expand
-                alignment=ft.MainAxisAlignment.SPACE_EVENLY  # Distribute space evenly
+                spacing=8,
+                alignment=ft.MainAxisAlignment.CENTER,  # Center the containers
+                wrap=True  # Allow wrapping if needed
             )
             options_content.append(expirations_row)
         
@@ -2478,6 +2644,11 @@ class StockAnalyzerApp:
         
         self.options_card.content.content.controls[1] = options_column
         self.page.update()
+    
+    def refresh_options_with_forecast(self, ticker: str) -> None:
+        """Refresh the options display with updated forecast data."""
+        if hasattr(self, 'options_card') and self.options_card:
+            self.display_options_analysis(ticker)
         
     def analyze_stock(self, e=None) -> None:
         """Main function to analyze the entered stock symbol (async)."""
@@ -2523,8 +2694,15 @@ class StockAnalyzerApp:
         
 
         # Start async analysis
-
-        self.executor.submit(self._analyze_stock_async, symbol)
+        if not self.executor_shutdown:
+            try:
+                self.executor.submit(self._analyze_stock_async, symbol)
+            except RuntimeError:
+                # Executor might be shut down, run synchronously as fallback
+                self._analyze_stock_async(symbol)
+        else:
+            # Executor is shut down, run synchronously
+            self._analyze_stock_async(symbol)
 
     
 
@@ -2709,8 +2887,15 @@ class StockAnalyzerApp:
         
 
         # Start async chart update
-
-        self.executor.submit(self._update_chart_async)
+        if not self.executor_shutdown:
+            try:
+                self.executor.submit(self._update_chart_async)
+            except RuntimeError:
+                # Executor might be shut down, run synchronously as fallback
+                self._update_chart_async()
+        else:
+            # Executor is shut down, run synchronously
+            self._update_chart_async()
 
     
 
@@ -2814,83 +2999,8 @@ class StockAnalyzerApp:
             # Build moving averages list
             mav_list = [period for period, checkbox in self.ma_checkboxes.items() if checkbox.value]
             
-            # Create additional plots
-            addplots = []
-            if "Support" in df_ind and df_ind["Support"].notna().any():
-                addplots.append(mpf.make_addplot(df_ind["Support"], color="green", linestyle="--", width=1.5))
-            if "Resistance" in df_ind and df_ind["Resistance"].notna().any():
-                addplots.append(mpf.make_addplot(df_ind["Resistance"], color="red", linestyle="--", width=1.5))
-            if not np.isnan(base_price):
-                addplots.append(mpf.make_addplot([base_price] * len(df_ind), color="orange", linestyle="--", width=1.5))
-            if below_5p:
-                addplots.append(mpf.make_addplot([below_5p] * len(df_ind), color="purple", linestyle="--", width=1.5))
-                
-            # MA colors
-            mav_colors = [self.ma_color_map[ma] for ma in mav_list]
-            
-            # Create the plot
-            fig, axlist = mpf.plot(
-                df_ind,
-                type="candle",
-                mav=mav_list if mav_list else None,
-                mavcolors=mav_colors if mav_list else None,
-                addplot=addplots or [],
-                volume=True,
-                style="charles",
-                returnfig=True,
-                figsize=(12, 8),
-                tight_layout=True
-            )
-            
-            # Add legend
-            main_ax = axlist[0]
-            legend_handles = []
-            legend_labels = []
-            
-            # Add MA legends
-            for ma in mav_list:
-                color = self.ma_color_map[ma]
-                legend_handles.append(Line2D([], [], color=color, linewidth=2, label=f"{ma}-day MA"))
-                legend_labels.append(f"{ma}-day MA")
-                
-            # Add indicator legends
-            if "Support" in df_ind and df_ind["Support"].notna().any():
-                sup_label = f"Support (20d): ${last_support:.2f}" if not np.isnan(last_support) else "Support (20d)"
-                legend_handles.append(Line2D([], [], color="green", linestyle="--", linewidth=1.5, label=sup_label))
-                legend_labels.append(sup_label)
-                
-            if "Resistance" in df_ind and df_ind["Resistance"].notna().any():
-                res_label = f"Resistance (20d): ${last_resistance:.2f}" if not np.isnan(last_resistance) else "Resistance (20d)"
-                legend_handles.append(Line2D([], [], color="red", linestyle="--", linewidth=1.5, label=res_label))
-                legend_labels.append(res_label)
-                
-            if not np.isnan(base_price):
-                bp_label = f"Base Price: ${base_price:.2f}"
-                legend_handles.append(Line2D([], [], color="orange", linestyle="--", linewidth=1.5, label=bp_label))
-                legend_labels.append(bp_label)
-                
-            if below_5p:
-                b5_label = f"5% Below Base: ${below_5p:.2f}"
-                legend_handles.append(Line2D([], [], color="purple", linestyle="--", linewidth=1.5, label=b5_label))
-                legend_labels.append(b5_label)
-                
-            # Add RSI info to title
+            # Get current price for display
             current_price = df_ind["Close"].iloc[-1]
-            title_text = f"{self.current_symbol} - Current: ${current_price:.2f}"
-            if not np.isnan(last_rsi):
-                title_text += f" | RSI: {last_rsi:.1f}"
-            main_ax.set_title(title_text, fontsize=14, fontweight='bold', pad=20, color='black')
-            
-            if legend_handles:
-                main_ax.legend(legend_handles, legend_labels, loc="upper left", fontsize=9, framealpha=0.9)
-            
-            # Convert chart to base64 for Flet
-            buf = io.BytesIO()
-            fig.savefig(buf, format='png', dpi=100, bbox_inches='tight')
-            buf.seek(0)
-            chart_image = base64.b64encode(buf.getvalue()).decode()
-            buf.close()
-            plt.close(fig)
             
             # Create and display Plotly chart
             chart_image = self.create_plotly_chart(df_ind)
@@ -2921,6 +3031,10 @@ class StockAnalyzerApp:
             # Show analysis summary
             self.show_analysis_summary(df_ind, current_price, last_rsi, base_price)
             
+            # Update options analysis with chart data now available
+            if self.current_symbol:
+                self.refresh_options_with_forecast(self.current_symbol)
+            
             # Re-enable button
             self.update_button.disabled = False
             self.update_button.text = "Update Chart"
@@ -2944,245 +3058,6 @@ class StockAnalyzerApp:
         self.update_button.text = "Update Chart"
         self.page.update()
     
-    def _on_chart_success(self, df_ind: pd.DataFrame) -> None:
-        """Handle successful chart update."""
-        try:
-            # Check if Plotly is available
-            if not PLOTLY_AVAILABLE:
-                raise ImportError("Plotly not available. Please install with: pip install plotly")
-            
-
-            # Calculate base price and levels
-
-            base_price = get_base_price(df_ind)
-
-            below_5p = round(base_price * 0.95, 2) if not np.isnan(base_price) else None
-
-            
-
-            # Get last values for legend
-
-            last_support = df_ind["Support"].iloc[-1] if "Support" in df_ind and not df_ind.empty else np.nan
-
-            last_resistance = df_ind["Resistance"].iloc[-1] if "Resistance" in df_ind and not df_ind.empty else np.nan
-
-            last_rsi = df_ind["RSI"].iloc[-1] if "RSI" in df_ind and not df_ind.empty else np.nan
-
-            
-
-            # Build moving averages list
-
-            mav_list = [period for period, checkbox in self.ma_checkboxes.items() if checkbox.value]
-            
-
-            # Create additional plots
-
-            addplots = []
-
-            if "Support" in df_ind and df_ind["Support"].notna().any():
-
-                addplots.append(mpf.make_addplot(df_ind["Support"], color="green", linestyle="--", width=1.5))
-
-            if "Resistance" in df_ind and df_ind["Resistance"].notna().any():
-
-                addplots.append(mpf.make_addplot(df_ind["Resistance"], color="red", linestyle="--", width=1.5))
-
-            if not np.isnan(base_price):
-
-                addplots.append(mpf.make_addplot([base_price] * len(df_ind), color="orange", linestyle="--", width=1.5))
-
-            if below_5p:
-
-                addplots.append(mpf.make_addplot([below_5p] * len(df_ind), color="purple", linestyle="--", width=1.5))
-
-                
-
-            # MA colors
-
-            mav_colors = [self.ma_color_map[ma] for ma in mav_list]
-
-            
-
-            # Create the plot
-
-            fig, axlist = mpf.plot(
-
-                df_ind,
-
-                type="candle",
-
-                mav=mav_list if mav_list else None,
-
-                mavcolors=mav_colors if mav_list else None,
-
-                addplot=addplots or [],
-
-                volume=True,
-
-                style="charles",
-
-                returnfig=True,
-
-                figsize=(12, 8),
-
-                tight_layout=True
-
-            )
-
-            
-
-            # Add legend
-
-            main_ax = axlist[0]
-
-            legend_handles = []
-
-            legend_labels = []
-
-            
-
-            # Add MA legends
-
-            for ma in mav_list:
-
-                color = self.ma_color_map[ma]
-
-                legend_handles.append(Line2D([], [], color=color, linewidth=2, label=f"{ma}-day MA"))
-
-                legend_labels.append(f"{ma}-day MA")
-
-                
-
-            # Add indicator legends
-
-            if "Support" in df_ind and df_ind["Support"].notna().any():
-
-                sup_label = f"Support (20d): ${last_support:.2f}" if not np.isnan(last_support) else "Support (20d)"
-
-                legend_handles.append(Line2D([], [], color="green", linestyle="--", linewidth=1.5, label=sup_label))
-
-                legend_labels.append(sup_label)
-
-                
-
-            if "Resistance" in df_ind and df_ind["Resistance"].notna().any():
-
-                res_label = f"Resistance (20d): ${last_resistance:.2f}" if not np.isnan(last_resistance) else "Resistance (20d)"
-
-                legend_handles.append(Line2D([], [], color="red", linestyle="--", linewidth=1.5, label=res_label))
-
-                legend_labels.append(res_label)
-
-                
-
-            if not np.isnan(base_price):
-
-                bp_label = f"Base Price: ${base_price:.2f}"
-
-                legend_handles.append(Line2D([], [], color="orange", linestyle="--", linewidth=1.5, label=bp_label))
-
-                legend_labels.append(bp_label)
-
-                
-
-            if below_5p:
-
-                b5_label = f"5% Below Base: ${below_5p:.2f}"
-
-                legend_handles.append(Line2D([], [], color="purple", linestyle="--", linewidth=1.5, label=b5_label))
-
-                legend_labels.append(b5_label)
-
-                
-
-            # Add RSI info to title
-
-            current_price = df_ind["Close"].iloc[-1]
-
-            title_text = f"{self.current_symbol} - Current: ${current_price:.2f}"
-
-            if not np.isnan(last_rsi):
-
-                title_text += f" | RSI: {last_rsi:.1f}"
-
-            main_ax.set_title(title_text, fontsize=14, fontweight='bold', pad=20, color='black')
-            
-
-            if legend_handles:
-
-                main_ax.legend(legend_handles, legend_labels, loc="upper left", fontsize=9, framealpha=0.9)
-
-                
-
-            # Convert chart to base64 for Flet
-            buf = io.BytesIO()
-            fig.savefig(buf, format='png', dpi=100, bbox_inches='tight')
-            buf.seek(0)
-            chart_image = base64.b64encode(buf.getvalue()).decode()
-            buf.close()
-            plt.close(fig)
-            
-            # Create and display Plotly chart
-            chart_image = self.create_plotly_chart(df_ind)
-            
-            # Create legend box and display chart with legend
-            legend_box = self.create_legend_box(df_ind, base_price)
-            
-            chart_and_legend = ft.Row([
-                ft.Container(
-                    content=ft.Image(
-                        src_base64=chart_image,
-                        width=None,  # Allow full width
-                        height=1000,  # Match the new chart height
-                        fit=ft.ImageFit.CONTAIN,
-                        expand=True
-                    ),
-                    expand=True
-                ),
-                ft.Container(
-                    content=legend_box,
-                    width=220,  # Slightly wider for price values
-                    padding=10
-                )
-            ], spacing=10)
-            
-            self.chart_card.content.content.controls[1] = chart_and_legend
-            
-
-            # Show analysis summary
-
-            self.show_analysis_summary(df_ind, current_price, last_rsi, base_price)
-
-            
-
-            # Re-enable button
-            self.update_button.disabled = False
-            self.update_button.text = "Update Chart"
-            self.page.update()
-            
-
-        except Exception as e:
-
-            self._on_chart_error(f"Chart rendering error: {str(e)}")
-
-    
-
-    def _on_chart_error(self, error_msg: str) -> None:
-
-        """Handle chart error."""
-
-        # Create a temporary snack bar
-        snack_bar = ft.SnackBar(
-            content=ft.Text(error_msg),
-            bgcolor=ft.Colors.RED
-        )
-        self.page.overlay.append(snack_bar)
-        snack_bar.open = True
-        
-        # Re-enable button
-        self.update_button.disabled = False
-        self.update_button.text = "Update Chart"
-        self.page.update()
     
     def create_legend_box(self, df_ind: pd.DataFrame, base_price: float) -> ft.Container:
         """Create a separate legend box for the chart with price values."""
@@ -3283,6 +3158,18 @@ class StockAnalyzerApp:
 
     def create_plotly_chart(self, df_ind: pd.DataFrame) -> str:
         """Create a Plotly chart and return base64 encoded image."""
+        # Create cache key based on symbol, timeframe, and MA settings
+        mav_list = [period for period, checkbox in self.ma_checkboxes.items() if checkbox.value]
+        timeframe = self.timeframe_dropdown.value if self.timeframe_dropdown else "1d"
+        cache_key = f"{self.current_symbol}_{timeframe}_{sorted(mav_list)}"
+        
+        # Check cache first
+        current_time = time.time()
+        if (cache_key in self.chart_cache and 
+            cache_key in self.chart_cache_timestamp and
+            current_time - self.chart_cache_timestamp[cache_key] < self.chart_cache_ttl):
+            return self.chart_cache[cache_key]
+        
         # Calculate base price and levels
         base_price = get_base_price(df_ind)
         below_5p = round(base_price * 0.95, 2) if not np.isnan(base_price) else None
@@ -3296,6 +3183,22 @@ class StockAnalyzerApp:
         # Build moving averages list
         mav_list = [period for period, checkbox in self.ma_checkboxes.items() if checkbox.value]
         
+        # Pre-calculate moving averages for better performance
+        ma_data_dict = {}
+        for ma in mav_list:
+            ma_data_dict[ma] = df_ind['Close'].rolling(window=ma, min_periods=1).mean()
+        
+        # Optimized volume color calculation using vectorized operations
+        volume_colors = ['rgba(158,202,225,0.6)']  # Default for first bar
+        if len(df_ind) > 1:
+            price_changes = df_ind['Close'].diff()
+            up_mask = price_changes > 0
+            down_mask = price_changes < 0
+            
+            # Vectorized color assignment
+            volume_colors.extend(['rgba(0,255,0,0.6)' if up else 'rgba(255,0,0,0.6)' 
+                                for up in up_mask.iloc[1:]])
+        
         # Create subplots with secondary y-axis for volume
         fig = make_subplots(
             rows=2, cols=1,
@@ -3305,7 +3208,7 @@ class StockAnalyzerApp:
             row_heights=[0.7, 0.3]
         )
         
-        # Add candlestick chart
+        # Add candlestick chart with enhanced hover info
         fig.add_trace(
             go.Candlestick(
                 x=df_ind.index,
@@ -3319,10 +3222,14 @@ class StockAnalyzerApp:
             row=1, col=1
         )
         
-        # Add moving averages
+        # Add moving averages with hover info showing MA values
         for ma in mav_list:
             color = self.ma_color_map[ma]
-            ma_data = df_ind['Close'].rolling(window=ma).mean()
+            ma_data = ma_data_dict[ma]
+            
+            # Create hover template with MA value
+            hover_template = f"<b>%{{x}}</b><br>{ma}-day MA: $%{{y:.2f}}<br><extra></extra>"
+            
             fig.add_trace(
                 go.Scatter(
                     x=df_ind.index,
@@ -3330,12 +3237,13 @@ class StockAnalyzerApp:
                     mode='lines',
                     name=f"{ma}-day MA",
                     line=dict(color=color, width=2),
-                    showlegend=True
+                    showlegend=True,
+                    hovertemplate=hover_template
                 ),
                 row=1, col=1
             )
         
-        # Add support line
+        # Add support line with hover info
         if "Support" in df_ind and df_ind["Support"].notna().any():
             fig.add_trace(
                 go.Scatter(
@@ -3344,12 +3252,13 @@ class StockAnalyzerApp:
                     mode='lines',
                     name=f"Support (20d): ${last_support:.2f}" if not np.isnan(last_support) else "Support (20d)",
                     line=dict(color="green", dash="dash", width=1.5),
-                    showlegend=True
+                    showlegend=True,
+                    hovertemplate="<b>%{x}</b><br>Support: $%{y:.2f}<br><extra></extra>"
                 ),
                 row=1, col=1
             )
         
-        # Add resistance line
+        # Add resistance line with hover info
         if "Resistance" in df_ind and df_ind["Resistance"].notna().any():
             fig.add_trace(
                 go.Scatter(
@@ -3358,12 +3267,13 @@ class StockAnalyzerApp:
                     mode='lines',
                     name=f"Resistance (20d): ${last_resistance:.2f}" if not np.isnan(last_resistance) else "Resistance (20d)",
                     line=dict(color="red", dash="dash", width=1.5),
-                    showlegend=True
+                    showlegend=True,
+                    hovertemplate="<b>%{x}</b><br>Resistance: $%{y:.2f}<br><extra></extra>"
                 ),
                 row=1, col=1
             )
         
-        # Add base price line
+        # Add base price line with hover info
         if not np.isnan(base_price):
             fig.add_trace(
                 go.Scatter(
@@ -3372,12 +3282,13 @@ class StockAnalyzerApp:
                     mode='lines',
                     name=f"Base Price: ${base_price:.2f}",
                     line=dict(color="orange", dash="dash", width=1.5),
-                    showlegend=True
+                    showlegend=True,
+                    hovertemplate="<b>%{x}</b><br>Base Price: $%{y:.2f}<br><extra></extra>"
                 ),
                 row=1, col=1
             )
         
-        # Add 5% below base price line
+        # Add 5% below base price line with hover info
         if below_5p:
             fig.add_trace(
                 go.Scatter(
@@ -3386,32 +3297,24 @@ class StockAnalyzerApp:
                     mode='lines',
                     name=f"5% Below Base: ${below_5p:.2f}",
                     line=dict(color="purple", dash="dash", width=1.5),
-                    showlegend=True
+                    showlegend=True,
+                    hovertemplate="<b>%{x}</b><br>5% Below Base: $%{y:.2f}<br><extra></extra>"
                 ),
                 row=1, col=1
             )
         
-            # Add volume chart with color coding (green for up, red for down)
-            volume_colors = []
-            for i in range(len(df_ind)):
-                if i == 0:
-                    volume_colors.append('rgba(158,202,225,0.6)')  # Default color for first bar
-                else:
-                    if df_ind['Close'].iloc[i] > df_ind['Close'].iloc[i-1]:
-                        volume_colors.append('rgba(0,255,0,0.6)')  # Green for up
-                    else:
-                        volume_colors.append('rgba(255,0,0,0.6)')  # Red for down
-            
-            fig.add_trace(
-                go.Bar(
-                    x=df_ind.index,
-                    y=df_ind['Volume'],
-                    name="Volume",
-                    marker_color=volume_colors,
-                    showlegend=False
-                ),
-                row=2, col=1
-            )
+        # Add volume chart with optimized colors
+        fig.add_trace(
+            go.Bar(
+                x=df_ind.index,
+                y=df_ind['Volume'],
+                name="Volume",
+                marker_color=volume_colors,
+                showlegend=False,
+                hovertemplate="<b>%{x}</b><br>Volume: %{y:,.0f}<br><extra></extra>"
+            ),
+            row=2, col=1
+        )
         
         # Update layout with larger chart and separate legend
         fig.update_layout(
@@ -3429,13 +3332,26 @@ class StockAnalyzerApp:
         fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
         fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
         
-        # Convert chart to image for Flet with larger size
-        # Create a much larger chart image for better visibility
-        chart_width = 2000  # Much larger width for better detail
-        chart_height = 1000  # Increased height as well
-            
-        img_bytes = pio.to_image(fig, format="png", width=chart_width, height=chart_height, scale=3)
-        return base64.b64encode(img_bytes).decode()
+        # Convert chart to image for Flet with optimized settings
+        # Maintain high quality but reduce scale for better performance
+        chart_width = 2000  # Keep large width for detail
+        chart_height = 1000  # Keep large height for detail
+        # Reduce scale from 3 to 2 for better performance while maintaining quality
+        img_bytes = pio.to_image(fig, format="png", width=chart_width, height=chart_height, scale=2)
+        chart_image = base64.b64encode(img_bytes).decode()
+        
+        # Cache the result
+        self.chart_cache[cache_key] = chart_image
+        self.chart_cache_timestamp[cache_key] = current_time
+        
+        # Clean up old cache entries
+        expired_keys = [key for key, timestamp in self.chart_cache_timestamp.items() 
+                       if current_time - timestamp > self.chart_cache_ttl]
+        for key in expired_keys:
+            self.chart_cache.pop(key, None)
+            self.chart_cache_timestamp.pop(key, None)
+        
+        return chart_image
             
 
     def show_analysis_summary(self, df_ind: pd.DataFrame, current_price: float, 
@@ -3551,12 +3467,49 @@ class StockAnalyzerApp:
     
 
     def cleanup(self) -> None:
-
         """Cleanup resources when application closes."""
-
-        if hasattr(self, 'executor'):
-
-            self.executor.shutdown(wait=False)
+        try:
+            print("Starting cleanup process...")
+            
+            # Stop any running threads or background tasks
+            if hasattr(self, 'executor') and self.executor:
+                try:
+                    print("Shutting down thread executor...")
+                    self.executor_shutdown = True  # Set flag to prevent new submissions
+                    self.executor.shutdown(wait=True)
+                    print("Thread executor shut down successfully.")
+                except Exception as e:
+                    print(f"Error shutting down executor gracefully: {e}")
+                    self.executor_shutdown = True  # Set flag even if shutdown fails
+                    try:
+                        self.executor.shutdown(wait=False)
+                        print("Thread executor force-shut down.")
+                    except Exception as e2:
+                        print(f"Error force-shutting down executor: {e2}")
+            
+            # Clear any cached data
+            if hasattr(self, 'chart_cache'):
+                self.chart_cache.clear()
+                print("Chart cache cleared.")
+            
+            if hasattr(self, 'chart_cache_timestamp'):
+                self.chart_cache_timestamp.clear()
+                print("Chart cache timestamps cleared.")
+            
+            # Reset application state
+            self.current_symbol = None
+            self.current_df = None
+            self.chart_image = None
+            self.fundamental_data = None
+            self.options_data = None
+            self.executor_shutdown = False  # Reset flag for potential restart
+            
+            print("Application state reset.")
+            print("Cleanup completed successfully.")
+            
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+            # Don't re-raise the exception to avoid crash during shutdown
 
 
 
@@ -3608,14 +3561,29 @@ def main(page: ft.Page) -> None:
             app.symbol_field.focus()
         
 
-        # Handle window closing
-
+        # Handle window closing and application shutdown
         def on_disconnect():
-            app.cleanup()
-
+            try:
+                print("Application is shutting down...")
+                app.cleanup()
+                print("Cleanup completed successfully.")
+            except Exception as e:
+                print(f"Error during cleanup: {e}")
         
-
+        # Set up disconnect handler
         page.on_disconnect = on_disconnect
+        
+        # Handle page close event
+        def on_page_close():
+            try:
+                print("Page is closing...")
+                app.cleanup()
+            except Exception as e:
+                print(f"Error during page close: {e}")
+        
+        # Register atexit handler as final cleanup
+        import atexit
+        atexit.register(lambda: app.cleanup() if 'app' in locals() else None)
         
 
     except Exception as e:
@@ -3633,11 +3601,32 @@ def main(page: ft.Page) -> None:
 
 def main_entry():
     """Main entry point for the application"""
+    # Set up signal handlers in the main thread
+    import signal
+    import sys
+    
+    def signal_handler(signum, frame):
+        print(f"\nReceived signal {signum}. Shutting down gracefully...")
+        sys.exit(0)
+    
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)  # Ctrl+C
+    signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
+    
     try:
+        print("Starting Stock Analysis Application...")
         ft.app(target=main)
+    except KeyboardInterrupt:
+        print("\nApplication interrupted by user. Shutting down gracefully...")
     except Exception as e:
         print(f"Error starting application: {e}")
-        input("Press Enter to exit...")
+        print("Press Enter to exit...")
+        try:
+            input()
+        except KeyboardInterrupt:
+            print("\nForced exit.")
+    finally:
+        print("Application has closed.")
 
 if __name__ == "__main__":
     main_entry()
