@@ -27,8 +27,9 @@ setup(
     author="Your Name",
     author_email="your.email@example.com",
     url="https://github.com/yourusername/stock-crypto-analyzer",
-    packages=find_packages(),
-    py_modules=["SC_Automated_Analysis"],
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
+    py_modules=["main"],
     install_requires=read_requirements(),
     python_requires=">=3.8",
     classifiers=[
@@ -44,7 +45,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "stock-crypto-analyzer=SC_Automated_Analysis:main",
+            "stock-crypto-analyzer=main:main",
         ],
     },
     keywords="stock, crypto, analysis, trading, finance, technical analysis, fundamental analysis",

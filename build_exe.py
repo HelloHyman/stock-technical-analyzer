@@ -63,7 +63,7 @@ def create_spec_file():
 block_cipher = None
 
 a = Analysis(
-    ['SC_Automated_Analysis.py'],
+    ['main.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -140,7 +140,7 @@ coll = COLLECT(
 )
 '''
     
-    with open('SC_Automated_Analysis.spec', 'w') as f:
+    with open('StockCryptoAnalyzer.spec', 'w') as f:
         f.write(spec_content)
     
     print("✅ Created PyInstaller spec file")
@@ -162,7 +162,7 @@ def build_executable():
     create_spec_file()
     
     # Build with PyInstaller
-    if not run_command(f"{sys.executable} -m PyInstaller SC_Automated_Analysis.spec", "Building executable"):
+    if not run_command(f"{sys.executable} -m PyInstaller StockCryptoAnalyzer.spec", "Building executable"):
         return False
     
     return True
