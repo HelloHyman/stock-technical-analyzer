@@ -17,6 +17,7 @@ mplfinance>=0.12.9
 requests>=2.31.0
 requests-cache>=1.1.0
 tenacity>=8.2.0
+retry>=0.9.2
 
 # Packaging for executable
 pyinstaller>=5.13.0
