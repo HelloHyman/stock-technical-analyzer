@@ -11,7 +11,7 @@ echo Starting the application...
 echo.
 
 REM Try to run the Python script directly
-python SC_Automated_Analysis.py
+python main.py
 
 REM If that fails, show error message
 if errorlevel 1 (
